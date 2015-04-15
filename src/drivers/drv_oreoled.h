@@ -58,6 +58,9 @@
 /** run macro */
 #define OREOLED_RUN_MACRO		_OREOLEDIOC(2)
 
+/** send bytes */
+#define OREOLED_SEND_BYTES		_OREOLEDIOC(3)
+
 /* Oreo LED driver supports up to 4 leds */
 #define OREOLED_NUM_LEDS		4
 
@@ -65,7 +68,7 @@
 #define OREOLED_ALL_INSTANCES	0xff
 
 /* maximum command length that can be sent to LEDs */
-#define OREOLED_CMD_LENGTH_MAX	10
+#define OREOLED_CMD_LENGTH_MAX	24
 
 /* enum passed to OREOLED_SET_MODE ioctl()
  *	defined by hardware */
@@ -114,7 +117,7 @@ enum oreoled_macro {
 	OREOLED_PARAM_MACRO_ENUM_COUNT
 };
 
-/* 
+/*
   structure passed to OREOLED_SET_RGB ioctl()
   Note that the driver scales the brightness to 0 to 255, regardless
   of the hardware scaling

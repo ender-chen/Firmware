@@ -9,16 +9,15 @@ before_script:
   - if [ "$CXX" = "g++" ]; then sudo apt-get install -qq g++-4.8 gcc-4.8 libstdc++-4.8-dev; fi
   - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
 # Travis specific tools
-  - sudo apt-get install s3cmd grep zip mailutils
+  - sudo apt-get install -qq s3cmd grep zip
 # General toolchain dependencies
-  - sudo apt-get install libc6:i386 libgcc1:i386 gcc-4.6-base:i386 libstdc++5:i386 libstdc++6:i386
-  - sudo apt-get install python-serial python-argparse python-empy
-  - sudo apt-get install flex bison libncurses5-dev autoconf texinfo build-essential libtool zlib1g-dev genromfs git wget cmake
+  - sudo apt-get install -qq libc6-i386 gcc-4.7-base:i386 python-serial python-argparse python-empy
+  - sudo apt-get install -qq flex bison libncurses5-dev autoconf texinfo build-essential libtool zlib1g-dev genromfs git wget cmake
   - pushd .
   - cd ~
-  - wget https://launchpadlibrarian.net/174121628/gcc-arm-none-eabi-4_7-2014q2-20140408-linux.tar.bz2
-  - tar -jxf gcc-arm-none-eabi-4_7-2014q2-20140408-linux.tar.bz2
-  - exportline="export PATH=$HOME/gcc-arm-none-eabi-4_7-2014q2/bin:\$PATH"
+  - wget https://launchpadlibrarian.net/186124160/gcc-arm-none-eabi-4_8-2014q3-20140805-linux.tar.bz2
+  - tar -jxf gcc-arm-none-eabi-4_8-2014q3-20140805-linux.tar.bz2
+  - exportline="export PATH=$HOME/gcc-arm-none-eabi-4_8-2014q3/bin:\$PATH"
   - if grep -Fxq "$exportline" ~/.profile; then echo nothing to do ; else echo $exportline >> ~/.profile; fi
   - . ~/.profile
   - popd
@@ -37,6 +36,7 @@ env:
 # Email address: $PX4_EMAIL
     - secure: "ei3hKAw6Pk+vEkQBI5Y2Ak74BRAaXcK2UHVnVadviBHI4EVPwn1YGP6A4Y0wnLe4U7ETTl0UiijRoVxyDW0Mq896Pv0siw02amNpjSZZYu+RfN1+//MChB48OxsLDirUdHVrULhl/bOARM02h2Bg28jDE2g7IqmJwg3em3oMbjU="
     - PX4_REPORT=report.txt
+    - BUILD_URI=https://px4-travis.s3.amazonaws.com/archives/Firmware/$TRAVIS_BRANCH/$TRAVIS_BUILD_ID/Firmware.zip
 
 script:
   - arm-none-eabi-gcc --version
@@ -58,11 +58,14 @@ after_script:
 # upload newest build for this branch with s3 index
   - ./CI-Tools/s3cmd-put Images/px4*.px4 CI-Tools/directory/index.html Firmware/$TRAVIS_BRANCH/
 # archive newest build by date with s3 index
-  - ./CI-Tools/s3cmd-put Firmware.zip archives/Firmware/$TRAVIS_BRANCH/`date "+%Y-%m-%d"`-$TRAVIS_BUILD_ID/
+  - ./CI-Tools/s3cmd-put Firmware.zip archives/Firmware/$TRAVIS_BRANCH/$TRAVIS_BUILD_ID/
   - ./CI-Tools/s3cmd-put CI-Tools/directory/index.html archives/Firmware/$TRAVIS_BRANCH/
 # upload top level index.html and timestamp.html
   - ./CI-Tools/s3cmd-put CI-Tools/index.html index.html
   - ./CI-Tools/s3cmd-put CI-Tools/timestamp.html timestamp.html
+  - echo ""
+  - echo "Binaries have been posted to:"
+  - echo https://px4-travis.s3.amazonaws.com/archives/Firmware/$TRAVIS_BRANCH/$TRAVIS_BUILD_ID/Firmware.zip
 
 deploy:
   provider: releases

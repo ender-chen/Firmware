@@ -55,6 +55,7 @@ PARAM_DEFINE_FLOAT(TRIM_YAW, 0.0f);
  * Defines the voltage where a single cell of the battery is considered empty.
  *
  * @group Battery Calibration
+ * @unit V
  */
 PARAM_DEFINE_FLOAT(BAT_V_EMPTY, 3.4f);
 
@@ -64,6 +65,7 @@ PARAM_DEFINE_FLOAT(BAT_V_EMPTY, 3.4f);
  * Defines the voltage where a single cell of the battery is considered full.
  *
  * @group Battery Calibration
+ * @unit V
  */
 PARAM_DEFINE_FLOAT(BAT_V_CHARGED, 4.2f);
 
@@ -74,6 +76,7 @@ PARAM_DEFINE_FLOAT(BAT_V_CHARGED, 4.2f);
  * to maximum current ratio and assumes linearity.
  *
  * @group Battery Calibration
+ * @unit V
  */
 PARAM_DEFINE_FLOAT(BAT_V_LOAD_DROP, 0.07f);
 
@@ -83,6 +86,7 @@ PARAM_DEFINE_FLOAT(BAT_V_LOAD_DROP, 0.07f);
  * Defines the number of cells the attached battery consists of.
  *
  * @group Battery Calibration
+ * @unit S
  */
 PARAM_DEFINE_INT32(BAT_N_CELLS, 3);
 
@@ -92,6 +96,7 @@ PARAM_DEFINE_INT32(BAT_N_CELLS, 3);
  * Defines the capacity of the attached battery.
  *
  * @group Battery Calibration
+ * @unit mA
  */
 PARAM_DEFINE_FLOAT(BAT_CAPACITY, -1.0f);
 
@@ -134,8 +139,8 @@ PARAM_DEFINE_INT32(COM_DL_REG_T, 0);
  * Engine failure triggers only above this throttle value
  *
  * @group commander
- * @min 0.0f
- * @max 1.0f
+ * @min 0.0
+ * @max 1.0
  */
 PARAM_DEFINE_FLOAT(COM_EF_THROT, 0.5f);
 
@@ -144,8 +149,8 @@ PARAM_DEFINE_FLOAT(COM_EF_THROT, 0.5f);
  * Engine failure triggers only below this current/throttle value
  *
  * @group commander
- * @min 0.0f
- * @max 7.0f
+ * @min 0.0
+ * @max 7.0
  */
 PARAM_DEFINE_FLOAT(COM_EF_C2T, 5.0f);
 
@@ -156,8 +161,8 @@ PARAM_DEFINE_FLOAT(COM_EF_C2T, 5.0f);
  *
  * @group commander
  * @unit second
- * @min 0.0f
- * @max 7.0f
+ * @min 0.0
+ * @max 7.0
  */
 PARAM_DEFINE_FLOAT(COM_EF_TIME, 10.0f);
 
@@ -171,3 +176,15 @@ PARAM_DEFINE_FLOAT(COM_EF_TIME, 10.0f);
  * @max 35
  */
 PARAM_DEFINE_FLOAT(COM_RC_LOSS_T, 0.5);
+
+/** Autosaving of params
+ *
+ * If not equal to zero the commander will automatically save parameters to persistent storage once changed.
+ * Default is on, as the interoperability with currently deployed GCS solutions depends on parameters
+ * being sticky. Developers can default it to off.
+ *
+ * @group commander
+ * @min 0
+ * @max 1
+ */
+PARAM_DEFINE_INT32(COM_AUTOS_PAR, 1);

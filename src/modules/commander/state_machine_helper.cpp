@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2013, 2014 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2013-2015 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -35,7 +35,7 @@
  * @file state_machine_helper.cpp
  * State machine helper functions implementations
  *
- * @author Thomas Gubler <thomasgubler@student.ethz.ch>
+ * @author Thomas Gubler <thomas@px4.io>
  * @author Julian Oes <julian@oes.ch>
  */
 
@@ -699,7 +699,7 @@ int prearm_check(const struct vehicle_status_s *status, const int mavlink_fd)
 		struct airspeed_s airspeed;
 
 		if ((ret = orb_copy(ORB_ID(airspeed), fd, &airspeed)) ||
-			(hrt_elapsed_time(&airspeed.timestamp) > (50 * 1000))) {
+			(hrt_elapsed_time(&airspeed.timestamp) > (500 * 1000))) {
 			mavlink_log_critical(mavlink_fd, "ARM FAIL: AIRSPEED SENSOR MISSING");
 			failed = true;
 			goto system_eval;
