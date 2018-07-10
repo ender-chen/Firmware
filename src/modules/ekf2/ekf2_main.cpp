@@ -170,6 +170,7 @@ private:
 	int _ev_att_sub{-1};
 	int _ev_pos_sub{-1};
 	int _gps_sub{-1};
+	int _gps_yaw_sub{-1};
 	int _landing_target_pose_sub{-1};
 	int _magnetometer_sub{-1};
 	int _optical_flow_sub{-1};
@@ -502,6 +503,7 @@ Ekf2::Ekf2():
 	_ev_att_sub = orb_subscribe(ORB_ID(vehicle_vision_attitude));
 	_ev_pos_sub = orb_subscribe(ORB_ID(vehicle_vision_position));
 	_gps_sub = orb_subscribe(ORB_ID(vehicle_gps_position));
+	_gps_yaw_sub = orb_subscribe(ORB_ID(vehicle_gps_yaw));
 	_landing_target_pose_sub = orb_subscribe(ORB_ID(landing_target_pose));
 	_magnetometer_sub = orb_subscribe(ORB_ID(vehicle_magnetometer));
 	_optical_flow_sub = orb_subscribe(ORB_ID(optical_flow));
@@ -526,6 +528,7 @@ Ekf2::~Ekf2()
 	orb_unsubscribe(_ev_att_sub);
 	orb_unsubscribe(_ev_pos_sub);
 	orb_unsubscribe(_gps_sub);
+	orb_unsubscribe(_gps_yaw_sub);
 	orb_unsubscribe(_landing_target_pose_sub);
 	orb_unsubscribe(_magnetometer_sub);
 	orb_unsubscribe(_optical_flow_sub);
@@ -698,7 +701,7 @@ void Ekf2::run()
 
 		// read mag data
 		bool magnetometer_updated = false;
-		orb_check(_magnetometer_sub, &magnetometer_updated);
+		// orb_check(_magnetometer_sub, &magnetometer_updated);
 
 		if (magnetometer_updated) {
 			vehicle_magnetometer_s magnetometer;
@@ -856,6 +859,19 @@ void Ekf2::run()
 				_ekf.setGpsData(gps.timestamp, &gps_msg);
 
 				ekf2_timestamps.gps_timestamp_rel = (int16_t)((int64_t)gps.timestamp / 100 - (int64_t)ekf2_timestamps.timestamp / 100);
+			}
+		}
+
+		bool gps_yaw_updated = false;
+		orb_check(_gps_yaw_sub, &gps_yaw_updated);
+
+		if (gps_yaw_updated) {
+			vehicle_gps_yaw_s gps_yaw;
+			if (orb_copy(ORB_ID(vehicle_gps_yaw), _gps_yaw_sub, &gps_yaw) == PX4_OK) {
+
+				_ekf.setgpsyawData(gps_yaw.timestamp, gps_yaw.yaw);
+				ekf2_timestamps.vehicle_magnetometer_timestamp_rel = (int16_t)((int64_t)gps_yaw.timestamp / 100 -
+						(int64_t)ekf2_timestamps.timestamp / 100);
 			}
 		}
 
