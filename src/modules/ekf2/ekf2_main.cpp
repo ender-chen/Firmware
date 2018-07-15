@@ -70,6 +70,7 @@
 #include <uORB/topics/landing_target_pose.h>
 #include <uORB/topics/vehicle_air_data.h>
 #include <uORB/topics/vehicle_magnetometer.h>
+#include <uORB/topics/vehicle_gps_yaw.h>
 
 using math::constrain;
 
@@ -178,6 +179,7 @@ private:
 	int _sensors_sub{-1};
 	int _status_sub{-1};
 	int _vehicle_land_detected_sub{-1};
+	int _vehicle_gps_yaw_sub{-1};
 
 	// because we can have several distance sensor instances with different orientations
 	int _range_finder_subs[ORB_MULTI_MAX_INSTANCES];
@@ -510,6 +512,7 @@ Ekf2::Ekf2():
 	_sensors_sub = orb_subscribe(ORB_ID(sensor_combined));
 	_status_sub = orb_subscribe(ORB_ID(vehicle_status));
 	_vehicle_land_detected_sub = orb_subscribe(ORB_ID(vehicle_land_detected));
+	_vehicle_gps_yaw_sub = orb_subscribe(ORB_ID(vehicle_gps_yaw));
 
 	for (unsigned i = 0; i < ORB_MULTI_MAX_INSTANCES; i++) {
 		_range_finder_subs[i] = orb_subscribe_multi(ORB_ID(distance_sensor), i);
@@ -534,6 +537,7 @@ Ekf2::~Ekf2()
 	orb_unsubscribe(_sensors_sub);
 	orb_unsubscribe(_status_sub);
 	orb_unsubscribe(_vehicle_land_detected_sub);
+	orb_unsubscribe(_vehicle_gps_yaw_sub);
 
 	for (unsigned i = 0; i < ORB_MULTI_MAX_INSTANCES; i++) {
 		orb_unsubscribe(_range_finder_subs[i]);
@@ -626,6 +630,7 @@ void Ekf2::run()
 		ekf2_timestamps.vehicle_magnetometer_timestamp_rel = ekf2_timestamps_s::RELATIVE_TIMESTAMP_INVALID;
 		ekf2_timestamps.vision_attitude_timestamp_rel = ekf2_timestamps_s::RELATIVE_TIMESTAMP_INVALID;
 		ekf2_timestamps.vision_position_timestamp_rel = ekf2_timestamps_s::RELATIVE_TIMESTAMP_INVALID;
+		ekf2_timestamps.vehicle_gps_yaw_timestamp_rel = ekf2_timestamps_s::RELATIVE_TIMESTAMP_INVALID;
 
 		// update all other topics if they have new data
 
@@ -1008,6 +1013,22 @@ void Ekf2::run()
 					_ekf.setAuxVelData(landing_target_pose.timestamp, velocity, variance);
 				}
 			}
+		}
+
+		bool gps_yaw_updated = false;
+		orb_check(_vehicle_gps_yaw_sub, &gps_yaw_updated);
+
+		if (gps_yaw_updated) {
+			vehicle_gps_yaw_s vehicle_gps_yaw;
+
+			if(orb_copy(ORB_ID(vehicle_gps_yaw), _vehicle_gps_yaw_sub, &vehicle_gps_yaw) == PX4_OK) {
+				if (vehicle_gps_yaw.fix_type == 6) {
+
+				}
+			}
+
+			ekf2_timestamps.vehicle_gps_yaw_timestamp_rel = (int16_t)((int64_t)vehicle_gps_yaw.timestamp / 100 -
+			 (int64_t)ekf2_timestamps.timestamp / 100);
 		}
 
 		// run the EKF update and output

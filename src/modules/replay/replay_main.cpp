@@ -72,6 +72,7 @@
 #include <uORB/topics/vehicle_local_position.h>
 #include <uORB/topics/vehicle_magnetometer.h>
 #include <uORB/topics/vehicle_status.h>
+#include <uORB/topics/vehicle_gps_yaw.h>
 
 #include "replay.hpp"
 
@@ -984,6 +985,8 @@ void ReplayEkf2::onSubscriptionAdded(Subscription &sub, uint16_t msg_id)
 
 	} else if (sub.orb_meta == ORB_ID(vehicle_vision_position)) {
 		_vehicle_vision_position_msg_id = msg_id;
+	} else if (sub.orb_meta == ORB_ID(vehicle_gps_yaw)) {
+		_vehicle_gps_yaw_msg_id = msg_id;
 	}
 
 	// the main loop should only handle publication of the following topics, the sensor topics are
@@ -1011,7 +1014,7 @@ bool ReplayEkf2::publishEkf2Topics(const ekf2_timestamps_s &ekf2_timestamps, std
 	handle_sensor_publication(ekf2_timestamps.vehicle_magnetometer_timestamp_rel, _vehicle_magnetometer_msg_id);
 	handle_sensor_publication(ekf2_timestamps.vision_attitude_timestamp_rel, _vehicle_vision_attitude_msg_id);
 	handle_sensor_publication(ekf2_timestamps.vision_position_timestamp_rel, _vehicle_vision_position_msg_id);
-
+	handle_sensor_publication(ekf2_timestamps.vehicle_gps_yaw_timestamp_rel, _vehicle_gps_yaw_msg_id);
 	// sensor_combined: publish last because ekf2 is polling on this
 	if (!findTimestampAndPublish(ekf2_timestamps.timestamp / 100, _sensor_combined_msg_id, replay_file)) {
 		if (_sensor_combined_msg_id == msg_id_invalid) {
