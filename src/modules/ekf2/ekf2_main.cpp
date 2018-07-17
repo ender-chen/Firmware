@@ -1024,6 +1024,8 @@ void Ekf2::run()
 			if(orb_copy(ORB_ID(vehicle_gps_yaw), _vehicle_gps_yaw_sub, &vehicle_gps_yaw) == PX4_OK) {
 				if (vehicle_gps_yaw.fix_type == 6) {
 
+					_ekf.setGpsYawData(vehicle_gps_yaw.timestamp, wrap_pi(vehicle_gps_yaw.yaw * M_PI / 180.0f));
+
 				}
 			}
 
