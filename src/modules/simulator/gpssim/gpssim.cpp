@@ -61,6 +61,7 @@
 #include <uORB/uORB.h>
 #include <uORB/topics/vehicle_gps_position.h>
 #include <uORB/topics/satellite_info.h>
+#include <uORB/topics/vehicle_gps_yaw.h>
 
 #include <simulator/simulator.h>
 
@@ -87,7 +88,7 @@ class GPSSIM : public VirtDevObj
 {
 public:
 	GPSSIM(const char *uart_path, bool fake_gps, bool enable_sat_info,
-	       int fix_type, int num_sat, int noise_multiplier);
+	       int fix_type, int num_sat, int noise_multiplier ,float gpsyaw);
 	virtual ~GPSSIM();
 
 	virtual int			init();
@@ -125,6 +126,9 @@ private:
 	int _fix_type;
 	int _num_sat;
 	int _noise_multiplier;
+	struct vehicle_gps_yaw_s _report_gpsyaw;
+	float _gpsyaw;
+	orb_advert_t 		_report_gpsyaw_pub;
 
 	std::default_random_engine _gen;
 
@@ -172,7 +176,7 @@ GPSSIM	*g_dev = nullptr;
 
 
 GPSSIM::GPSSIM(const char *uart_path, bool fake_gps, bool enable_sat_info,
-	       int fix_type, int num_sat, int noise_multiplier) :
+	       int fix_type, int num_sat, int noise_multiplier, float gpsyaw) :
 	VirtDevObj("gps", GPSSIM_DEVICE_PATH, nullptr, 1e6 / 10),
 	_task_should_exit(false),
 	//_healthy(false),
@@ -186,7 +190,9 @@ GPSSIM::GPSSIM(const char *uart_path, bool fake_gps, bool enable_sat_info,
 	_rate(0.0f),
 	_fix_type(fix_type),
 	_num_sat(num_sat),
-	_noise_multiplier(noise_multiplier)
+	_noise_multiplier(noise_multiplier),
+	_gpsyaw(gpsyaw),
+	_report_gpsyaw_pub(nullptr)
 {
 	// /* store port name */
 	// strncpy(_port, uart_path, sizeof(_port));
@@ -196,7 +202,7 @@ GPSSIM::GPSSIM(const char *uart_path, bool fake_gps, bool enable_sat_info,
 	/* we need this potentially before it could be set in task_main */
 	g_dev = this;
 	memset(&_report_gps_pos, 0, sizeof(_report_gps_pos));
-
+	memset(&_report_gpsyaw, 0, sizeof(_report_gpsyaw));
 	/* create satellite info data object if requested */
 	if (enable_sat_info) {
 		_Sat_Info = new (GPS_Sat_Info);
@@ -314,6 +320,8 @@ GPSSIM::receive(int timeout)
 		_report_gps_pos.lat += (int32_t)(_noise_multiplier * normal_distribution(_gen));
 		_report_gps_pos.lon += (int32_t)(_noise_multiplier * normal_distribution(_gen));
 
+		_report_gpsyaw.timestamp = hrt_absolute_time();
+		_report_gpsyaw.yaw = _gpsyaw;
 		return 1;
 
 	} else {
@@ -351,6 +359,12 @@ GPSSIM::task_main()
 				} else {
 					_report_sat_info_pub = orb_advertise(ORB_ID(satellite_info), _p_report_sat_info);
 				}
+			}
+
+			if (_report_gpsyaw_pub != nullptr) {
+				orb_publish(ORB_ID(vehicle_gps_yaw), _report_gpsyaw_pub, &_report_gpsyaw);
+			} else {
+				_report_gpsyaw_pub = orb_advertise(ORB_ID(vehicle_gps_yaw), &_report_gpsyaw);
 			}
 		}
 	}
@@ -405,7 +419,7 @@ namespace gpssim
 GPSSIM	*g_dev = nullptr;
 
 void	start(const char *uart_path, bool fake_gps, bool enable_sat_info,
-	      int fix_type, int num_sat, int noise_multiplier);
+	      int fix_type, int num_sat, int noise_multiplier, float gpsyaw);
 void	stop();
 void	test();
 void	reset();
@@ -416,12 +430,12 @@ void	usage(const char *reason);
  * Start the driver.
  */
 void
-start(const char *uart_path, bool fake_gps, bool enable_sat_info, int fix_type, int num_sat, int noise_multiplier)
+start(const char *uart_path, bool fake_gps, bool enable_sat_info, int fix_type, int num_sat, int noise_multiplier, float gpsyaw)
 {
 	DevHandle h;
 
 	/* create the driver */
-	g_dev = new GPSSIM(uart_path, fake_gps, enable_sat_info, fix_type, num_sat, noise_multiplier);
+	g_dev = new GPSSIM(uart_path, fake_gps, enable_sat_info, fix_type, num_sat, noise_multiplier, gpsyaw);
 
 	if (g_dev == nullptr) {
 		goto fail;
@@ -531,6 +545,7 @@ gpssim_main(int argc, char *argv[])
 	int fix_type = -1;
 	int num_sat = -1;
 	int noise_multiplier = 0;
+	float gpsyaw = 0.0f;
 
 	// check for optional arguments
 	int ch;
@@ -568,6 +583,11 @@ gpssim_main(int argc, char *argv[])
 			noise_multiplier = atoi(myoptarg);
 			PX4_INFO("Setting noise multiplier to %d", noise_multiplier);
 			break;
+		case 'y':
+			gpsyaw = atoi(myoptarg);
+			PX4_INFO("Setting gpsyaw to %.2lf", (double)gpsyaw);
+			break;
+
 
 		default:
 			PX4_WARN("Unknown option!");
@@ -588,7 +608,7 @@ gpssim_main(int argc, char *argv[])
 			return 0;
 		}
 
-		gpssim::start(device_name, fake_gps, enable_sat_info, fix_type, num_sat, noise_multiplier);
+		gpssim::start(device_name, fake_gps, enable_sat_info, fix_type, num_sat, noise_multiplier, gpsyaw);
 		return 0;
 	}
 
