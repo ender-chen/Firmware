@@ -322,6 +322,7 @@ GPSSIM::receive(int timeout)
 
 		_report_gpsyaw.timestamp = hrt_absolute_time();
 		_report_gpsyaw.yaw = _gpsyaw;
+		_report_gpsyaw.fix_type = 6;
 		return 1;
 
 	} else {
@@ -552,7 +553,7 @@ gpssim_main(int argc, char *argv[])
 	int myoptind = 1;
 	const char *myoptarg = nullptr;
 
-	while ((ch = px4_getopt(argc, argv, "d:fst:n:m:", &myoptind, &myoptarg)) != EOF) {
+	while ((ch = px4_getopt(argc, argv, "d:fst:n:m:y:", &myoptind, &myoptarg)) != EOF) {
 		switch (ch) {
 		case 'd':
 			device_name = myoptarg;
