@@ -78,6 +78,7 @@
 #include <uORB/topics/satellite_info.h>
 #include <uORB/topics/gps_inject_data.h>
 #include <uORB/topics/gps_dump.h>
+#include <uORB/topics/vehicle_gps_yaw.h>
 
 #include <board_config.h>
 
@@ -167,12 +168,17 @@ private:
 	unsigned			_last_rate_rtcm_injection_count; 		///< counter for number of RTCM messages
 	bool				_fake_gps;					///< fake gps output
 	Instance 			_instance;
+	struct vehicle_gps_yaw_s   _gps_yaw;
 
 	int _orb_inject_data_fd;
 
 	orb_advert_t _dump_communication_pub;			///< if non-null, dump communication
 	gps_dump_s *_dump_to_device;
 	gps_dump_s *_dump_from_device;
+
+	orb_advert_t 		_vehicle_gps_yaw_pub;
+
+	int 				_gps_yaw_orb_instance;
 
 	static volatile bool _is_gps_main_advertised; ///< for the second gps we want to make sure that it gets instance 1
 	/// and thus we wait until the first one publishes at least one message.
@@ -282,7 +288,9 @@ GPS::GPS(const char *path, gps_driver_mode_t mode, GPSHelper::Interface interfac
 	_orb_inject_data_fd(-1),
 	_dump_communication_pub(nullptr),
 	_dump_to_device(nullptr),
-	_dump_from_device(nullptr)
+	_dump_from_device(nullptr),
+	_gps_yaw(nullptr),
+	_vehicle_gps_yaw_pub(nullptr)
 {
 	/* store port name */
 	strncpy(_port, path, sizeof(_port));
@@ -692,7 +700,7 @@ GPS::run()
 				break;
 
 			case GPS_DRIVER_MODE_ASHTECH:
-				_helper = new GPSDriverAshtech(&GPS::callback, this, &_report_gps_pos, _p_report_sat_info);
+				_helper = new GPSDriverAshtech(&GPS::callback, this, &_report_gps_pos, _p_report_sat_info, &_gps_yaw);
 				break;
 
 			default:
@@ -708,6 +716,7 @@ GPS::run()
 
 				/* reset report */
 				memset(&_report_gps_pos, 0, sizeof(_report_gps_pos));
+				memset(&_gps_yaw, 0, sizeof(_gps_yaw));
 
 				if (_mode == GPS_DRIVER_MODE_UBX) {
 
@@ -727,6 +736,10 @@ GPS::run()
 
 					if (_p_report_sat_info && (helper_ret & 2)) {
 						publishSatelliteInfo();
+					}
+
+					if (_gps_yaw && (helper_ret & 4)) {
+						publishgpsyaw();
 					}
 
 					/* measure update rate every 5 seconds */
@@ -825,6 +838,7 @@ GPS::run()
 	}
 
 	orb_unadvertise(_report_gps_pos_pub);
+	orb_unadvertise(_vehicle_gps_yaw_pub);
 }
 
 
@@ -930,6 +944,15 @@ GPS::publishSatelliteInfo()
 	}
 }
 
+void
+GPS::publishgpsyaw() 
+{
+	if (_instance == Instance::Main) {
+		orb_publish_auto(ORB_ID(vehicle_gps_yaw), &_report_gps_yaw_pub, _gps_yaw,_gps_yaw_orb_instance, ORB_PRIO_DEFAULT);
+	} else {
+
+	}
+}
 int GPS::custom_command(int argc, char *argv[])
 {
 	return print_usage("unknown command");
