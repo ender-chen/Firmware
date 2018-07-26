@@ -322,7 +322,6 @@ GPSSIM::receive(int timeout)
 
 		_report_gpsyaw.timestamp = hrt_absolute_time();
 		_report_gpsyaw.yaw = _gpsyaw;
-		_report_gpsyaw.fix_type = 6;
 		return 1;
 
 	} else {

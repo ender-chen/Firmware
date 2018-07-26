@@ -953,7 +953,8 @@ ACCELSIM::mag_measure()
 
 	if (!(m_pub_blocked)) {
 		/* publish it */
-		orb_publish(ORB_ID(sensor_mag), _mag->_mag_topic, &mag_report);
+		// PX4_INFO("publish sensor mag in accelsim");
+		// orb_publish(ORB_ID(sensor_mag), _mag->_mag_topic, &mag_report);
 	}
 
 	_mag_read++;
